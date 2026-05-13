@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StylGif — Data Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f0e8;
+    --accent: #ff3c00;
+    --accent2: #00d4ff;
+    --panel: #111111;
+    --border: #222222;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+  }
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image: linear-gradient(#161616 1px, transparent 1px), linear-gradient(90deg, #161616 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events:none; z-index:0;
+  }
+
+  nav {
+    position:relative; z-index:10;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 28px;
+    background:rgba(10,10,10,0.9);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border);
+  }
+  .logo { font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; }
+  .logo span { color:var(--accent); }
+  .nav-links { display:flex; gap:8px; }
+  .nav-links a {
+    font-size:0.72rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--white); text-decoration:none; padding:7px 14px;
+    border:1.5px solid #333; border-radius:3px; transition:all 0.2s;
+  }
+  .nav-links a:hover { border-color:var(--accent); background:var(--accent); color:var(--black); }
+  .nav-links a.active { border-color:var(--accent2); background:rgba(0,212,255,0.1); color:var(--accent2); }
+
+  .page-wrap {
+    position:relative; z-index:1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 50px 28px 80px;
+  }
+
+  .page-header {
+    margin-bottom: 56px;
+  }
+  .page-tag {
+    font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase;
+    color:var(--accent2); border:1px solid var(--accent2); display:inline-block;
+    padding:4px 12px; border-radius:2px; margin-bottom:16px;
+  }
+  .page-title {
+    font-family:'Syne',sans-serif;
+    font-size:clamp(2rem,5vw,3.5rem);
+    font-weight:800;
+    line-height:1;
+    letter-spacing:-0.03em;
+    margin-bottom:12px;
+  }
+  .page-title span { color:var(--accent); }
+  .page-desc { font-size:0.82rem; line-height:1.8; color:#666; max-width:500px; }
+
+  /* SECTION */
+  .data-section {
+    margin-bottom: 64px;
+  }
+  .section-head {
+    display:flex; align-items:center; gap:16px;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-head h2 {
+    font-family:'Syne',sans-serif;
+    font-size:1.2rem; font-weight:700; letter-spacing:-0.02em;
+  }
+  .section-head .badge {
+    font-size:0.6rem; background:rgba(255,60,0,0.15); color:var(--accent);
+    border:1px solid rgba(255,60,0,0.3); padding:3px 10px; border-radius:2px;
+    letter-spacing:0.1em; text-transform:uppercase;
+  }
+
+  /* CARD */
+  .data-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+  .data-card:hover { border-color: #333; }
+
+  .card-top {
+    padding: 20px 24px;
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  .card-avatar {
+    width: 80px; height: 80px;
+    border-radius: 6px;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    overflow: hidden;
+    position: relative;
+  }
+  .card-avatar img {
+    width:100%; height:100%; object-fit:cover; display:block;
+  }
+  .avatar-placeholder {
+    color: #333;
+    font-size:0.6rem;
+    text-align:center;
+    line-height:1.4;
+    padding:4px;
+  }
+
+  .card-fields { flex:1; display:flex; flex-direction:column; gap:12px; }
+
+  .field-row { display:flex; flex-direction:column; gap:5px; }
+  .field-label {
+    font-size:0.58rem; letter-spacing:0.14em; text-transform:uppercase; color:#444;
+  }
+  .field-input {
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    padding: 9px 12px;
+    border-radius: 3px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field-input:focus { border-color: var(--accent2); }
+  .field-input.textarea { min-height: 80px; resize: vertical; }
+
+  .field-row-inline { display:flex; gap:12px; }
+  .field-row-inline .field-row { flex:1; }
+
+  .card-bottom {
+    padding: 12px 24px;
+    background: #0d0d0d;
+    border-top: 1px solid #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-bottom-hint { font-size:0.62rem; color:#333; }
+
+  /* PHOTO UPLOAD */
+  .photo-upload-area {
+    border: 1.5px dashed #2a2a2a;
+    border-radius: 4px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    background: #0f0f0f;
+    position: relative;
+  }
+  .photo-upload-area:hover { border-color: var(--accent2); }
+  .photo-upload-area input[type="file"] {
+    position:absolute; inset:0; opacity:0; cursor:pointer;
+  }
+  .upload-label { font-size:0.68rem; color:#555; }
+  .upload-label span { color:var(--accent2); }
+
+  /* BTN */
+  .btn {
+    font-family:'Space Mono',monospace;
+    font-size:0.7rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+    padding:9px 20px; border-radius:3px; cursor:pointer; border:none; transition:all 0.15s;
+  }
+  .btn-accent { background:var(--accent); color:var(--black); }
+  .btn-accent:hover { opacity:0.85; }
+  .btn-ghost { background:#1a1a1a; color:#888; border:1.5px solid #2a2a2a; }
+  .btn-ghost:hover { border-color:#555; color:var(--white); }
+  .btn-danger { background:transparent; color:#c44; border:1.5px solid #422; }
+  .btn-danger:hover { border-color:#c44; color:#ff6666; }
+  .btn-sm { font-size:0.62rem; padding:6px 14px; }
+
+  .add-card-btn {
+    width:100%; padding:16px; background:transparent;
+    border:1.5px dashed #2a2a2a; border-radius:6px; color:#555;
+    font-family:'Space Mono',monospace; font-size:0.72rem; font-weight:700;
+    letter-spacing:0.06em; text-transform:uppercase; cursor:pointer;
+    transition:all 0.2s;
+  }
+  .add-card-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* FEATURED GIF DATA */
+  .gif-data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .gif-data-card {
+    background:var(--panel); border:1px solid var(--border); border-radius:6px;
+    padding:18px; transition:border-color 0.2s;
+  }
+  .gif-data-card:hover { border-color:#333; }
+  .gif-data-card h3 {
+    font-size:0.72rem; letter-spacing:0.06em; text-transform:uppercase;
+    margin-bottom:14px; color:#888;
+  }
+
+  /* INFO BOX */
+  .info-box {
+    background: rgba(0,212,255,0.04);
+    border: 1px solid rgba(0,212,255,0.15);
+    border-radius:6px;
+    padding:16px 20px;
+    margin-bottom:32px;
+    font-size:0.75rem;
+    line-height:1.8;
+    color:#777;
+  }
+  .info-box code {
+    background:#1a1a1a; padding:2px 6px; border-radius:2px;
+    font-family:'Space Mono',monospace; font-size:0.72rem; color:var(--accent2);
+  }
+
+  /* HOW-TO INSTRUCTIONS */
+  .instructions {
+    background:#0f0f0f; border:1px solid var(--border); border-radius:6px;
+    padding:24px; margin-bottom:48px;
+  }
+  .instructions h3 {
+    font-family:'Syne',sans-serif; font-size:1rem; font-weight:700;
+    margin-bottom:16px; color:var(--white);
+  }
+  .step-list { list-style:none; display:flex; flex-direction:column; gap:10px; }
+  .step-list li {
+    display:flex; gap:12px; align-items:flex-start;
+    font-size:0.77rem; line-height:1.7; color:#777;
+  }
+  .step-list li .n {
+    flex-shrink:0; width:20px; height:20px; border-radius:50%;
+    background:var(--accent); color:var(--black); font-weight:700;
+    font-size:0.62rem; display:flex; align-items:center; justify-content:center;
+    margin-top:2px;
+  }
+
+  /* TOAST */
+  .toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+    background:#1a1a1a; border:1px solid var(--accent); color:var(--accent);
+    font-size:0.72rem; letter-spacing:0.06em; padding:10px 24px;
+    border-radius:4px; z-index:9999; transition:transform 0.3s;
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:2px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Styl<span>Gif</span></div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="drawing.html">Drawing</a>
+    <a href="gifs.html">GIFs</a>
+    <a href="data.html" class="active">Data</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div class="page-tag">// data.html</div>
+    <h1 class="page-title">Project <span>Data</span></h1>
+    <p class="page-desc">Edit team bios, photos, and featured GIF metadata here. Changes automatically reflect on the Home page when you copy the exported JSON into index.html.</p>
+  </div>
+
+  <!-- INSTRUCTIONS -->
+  <div class="instructions">
+    <h3>How to Use This File</h3>
+    <ul class="step-list">
+      <li><span class="n">1</span>Fill in the team member fields below — name, role, bio, and photo.</li>
+      <li><span class="n">2</span>To add a photo: upload an image file. Note the filename, then place the image in the same folder as these HTML files. Set the path like <code>img/yourphoto.jpg</code>.</li>
+      <li><span class="n">3</span>Click <strong>Export JSON</strong> at the bottom to copy the data object.</li>
+      <li><span class="n">4</span>Open <code>index.html</code> and replace the <code>const TEAM = [...]</code> array with your exported data.</li>
+      <li><span class="n">5</span>Optionally, edit the Featured GIFs section to rename the showcase tiles shown on the home screen.</li>
+    </ul>
+  </div>
+
+  <!-- TEAM MEMBERS -->
+  <div class="data-section">
+    <div class="section-head">
+      <h2>Team Members</h2>
+      <span class="badge">Home → About Section</span>
+    </div>
+
+    <div class="info-box">
+      These profiles appear in the <code>About</code> section of the home page. Add up to 6 members.
+      Upload a square photo (recommended: 300×300px or above) and note the file path.
+    </div>
+
+    <div id="teamCards"></div>
+    <button class="add-card-btn" onclick="addTeamCard()">+ Add Team Member</button>
+  </div>
+
+  <!-- FEATURED GIFS -->
+  <div class="data-section">
+    <div class="section-head">
+      <h2>Featured GIF Tiles</h2>
+      <span class="badge">Home → GIF Gallery</span>
+    </div>
+
+    <div class="info-box">
+      These are the animated preview tiles shown in the gallery on the home page.
+      Rename them here. The animation is auto-generated — colors and motion are always procedural.
+    </div>
+
+    <div class="gif-data-grid" id="gifDataGrid"></div>
+  </div>
+
+  <!-- PROJECT INFO -->
+  <div class="data-section">
+    <div class="section-head">
+      <h2>Project Info</h2>
+      <span class="badge">Meta</span>
+    </div>
+
+    <div class="data-card">
+      <div class="card-top">
+        <div class="card-fields">
+          <div class="field-row-inline">
+            <div class="field-row">
+              <div class="field-label">Project Title</div>
+              <input class="field-input" id="projTitle" value="StylGif" placeholder="StylGif">
+            </div>
+            <div class="field-row">
+              <div class="field-label">Subtitle</div>
+              <input class="field-input" id="projSubtitle" value="Pixel Art GIF Maker" placeholder="tagline">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">Short Description (shown in hero)</div>
+            <textarea class="field-input textarea" id="projDesc" placeholder="Describe your project in 1–2 sentences...">StylGif turns your pixel drawings into looping animated GIFs. Paint frame by frame, watch your art come alive, and share it with the world.</textarea>
+          </div>
+          <div class="field-row-inline">
+            <div class="field-row">
+              <div class="field-label">GitHub URL</div>
+              <input class="field-input" id="projGithub" value="" placeholder="https://github.com/yourname/stylegif">
+            </div>
+            <div class="field-row">
+              <div class="field-label">Year</div>
+              <input class="field-input" id="projYear" value="2024" placeholder="2024">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:40px;padding-top:32px;border-top:1px solid var(--border);">
+    <button class="btn btn-accent" onclick="exportData()">↓ Export JSON to Clipboard</button>
+    <button class="btn btn-ghost" onclick="loadSaved()">↺ Load Saved</button>
+    <button class="btn btn-ghost" onclick="saveLocal()">💾 Save Locally</button>
+  </div>
+
+  <div id="exportPreview" style="display:none;margin-top:20px;">
+    <div class="field-label" style="margin-bottom:8px">Exported Data — copy into index.html</div>
+    <pre id="exportCode" style="background:#0f0f0f;border:1px solid #222;border-radius:4px;padding:20px;font-size:0.65rem;line-height:1.7;color:#888;overflow-x:auto;white-space:pre-wrap;max-height:300px;overflow-y:auto;"></pre>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//   DEFAULT DATA
+// ═══════════════════════════════════════════════════════════════════
+
+const DEFAULT_TEAM = [
+  {
+    name: "Your Name",
+    role: "Lead Developer",
+    bio: "CS student and pixel art enthusiast. Built StylGif for the class project. Interested in creative coding, generative art, and making tools that feel great to use.",
+    emoji: "👾",
+    photo: "",
+    github: "",
+    links: ""
+  },
+  {
+    name: "Partner / Collaborator",
+    role: "UI / UX Designer",
+    bio: "Designed the interface and color systems. Loves retro aesthetics, typography, and making interfaces that look like they were crafted, not generated.",
+    emoji: "🎨",
+    photo: "",
+    github: "",
+    links: ""
+  }
+];
+
+const DEFAULT_GIFS = [
+  { name: "Walking Sprite" },
+  { name: "Bouncing Ball" },
+  { name: "Fire Loop" },
+  { name: "Star Twinkle" },
+  { name: "Rain Drop" },
+  { name: "Pixel Heart" },
+];
+
+let teamData = [...DEFAULT_TEAM];
+let gifData  = [...DEFAULT_GIFS];
+
+// ═══════════════════════════════════════════════════════════════════
+//   BUILD TEAM CARDS
+// ═══════════════════════════════════════════════════════════════════
+
+function buildTeamCards() {
+  const container = document.getElementById('teamCards');
+  container.innerHTML = '';
+  teamData.forEach((member, i) => {
+    const card = document.createElement('div');
+    card.className = 'data-card';
+    card.innerHTML = `
+      <div class="card-top">
+        <div>
+          <div class="card-avatar" id="avatar_${i}">
+            ${member.photo
+              ? `<img src="${member.photo}" alt="photo">`
+              : `<div class="avatar-placeholder">${member.emoji}<br><span style="font-size:0.5rem;color:#333">no photo</span></div>`}
+          </div>
+          <div class="photo-upload-area" style="margin-top:8px;width:80px;">
+            <input type="file" accept="image/*" onchange="handlePhoto(event,${i})">
+            <div class="upload-label" style="font-size:0.55rem;pointer-events:none"><span>Upload</span><br>photo</div>
+          </div>
+        </div>
+        <div class="card-fields">
+          <div class="field-row-inline">
+            <div class="field-row">
+              <div class="field-label">Name</div>
+              <input class="field-input" value="${member.name}" oninput="updateTeam(${i},'name',this.value)" placeholder="Full Name">
+            </div>
+            <div class="field-row">
+              <div class="field-label">Role / Title</div>
+              <input class="field-input" value="${member.role}" oninput="updateTeam(${i},'role',this.value)" placeholder="e.g. Lead Developer">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">Bio</div>
+            <textarea class="field-input textarea" oninput="updateTeam(${i},'bio',this.value)" placeholder="Short bio...">${member.bio}</textarea>
+          </div>
+          <div class="field-row-inline">
+            <div class="field-row">
+              <div class="field-label">Emoji (if no photo)</div>
+              <input class="field-input" value="${member.emoji}" oninput="updateTeam(${i},'emoji',this.value)" placeholder="👾" style="font-size:1.2rem">
+            </div>
+            <div class="field-row">
+              <div class="field-label">GitHub</div>
+              <input class="field-input" value="${member.github}" oninput="updateTeam(${i},'github',this.value)" placeholder="https://github.com/...">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">Photo Path (after upload, set path manually)</div>
+            <input class="field-input" value="${member.photo}" oninput="updateTeam(${i},'photo',this.value)" placeholder="img/yourphoto.jpg">
+          </div>
+        </div>
+      </div>
+      <div class="card-bottom">
+        <span class="card-bottom-hint">Member ${i+1} of ${teamData.length}</span>
+        <button class="btn btn-danger btn-sm" onclick="removeTeam(${i})">Remove</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function updateTeam(i, key, val) {
+  teamData[i][key] = val;
+  if (key === 'emoji' || key === 'photo') buildTeamCards();
+}
+
+function handlePhoto(e, i) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    // Preview only — user still needs to set actual path
+    const avatarEl = document.getElementById(`avatar_${i}`);
+    if (avatarEl) avatarEl.innerHTML = `<img src="${ev.target.result}" alt="preview">`;
+    teamData[i].photo = file.name;
+    showToast(`Photo loaded: ${file.name} — remember to set path in the field below`);
+  };
+  reader.readAsDataURL(file);
+}
+
+function addTeamCard() {
+  if (teamData.length >= 6) { showToast('Max 6 team members'); return; }
+  teamData.push({ name:'New Member', role:'Developer', bio:'...', emoji:'⭐', photo:'', github:'', links:'' });
+  buildTeamCards();
+}
+
+function removeTeam(i) {
+  if (teamData.length <= 1) { showToast('Need at least 1 team member'); return; }
+  teamData.splice(i,1);
+  buildTeamCards();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//   GIF DATA
+// ═══════════════════════════════════════════════════════════════════
+
+function buildGifCards() {
+  const grid = document.getElementById('gifDataGrid');
+  grid.innerHTML = '';
+  gifData.forEach((g, i) => {
+    const card = document.createElement('div');
+    card.className = 'gif-data-card';
+    card.innerHTML = `
+      <h3>Tile ${i+1}</h3>
+      <div class="field-row">
+        <div class="field-label">Tile Name</div>
+        <input class="field-input" value="${g.name}" oninput="gifData[${i}].name=this.value" placeholder="e.g. Walking Sprite">
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//   EXPORT / SAVE
+// ═══════════════════════════════════════════════════════════════════
+
+function exportData() {
+  const projData = {
+    project: {
+      title:    document.getElementById('projTitle').value,
+      subtitle: document.getElementById('projSubtitle').value,
+      desc:     document.getElementById('projDesc').value,
+      github:   document.getElementById('projGithub').value,
+      year:     document.getElementById('projYear').value
+    },
+    team: teamData,
+    featuredGifs: gifData
+  };
+
+  const teamJS    = `const TEAM = ${JSON.stringify(teamData, null, 2)};`;
+  const gifJS     = `const FEATURED_GIFS = ${JSON.stringify(gifData.map(g=>({name:g.name,colors:['#ff3c00','#ff6600','#00d4ff','#ffcc00','#ff3366']})), null, 2)};`;
+  const output    = `// === PASTE THIS INTO index.html ===\n\n${teamJS}\n\n${gifJS}`;
+
+  navigator.clipboard.writeText(output).then(() => showToast('Copied to clipboard!'));
+  document.getElementById('exportCode').textContent = output;
+  document.getElementById('exportPreview').style.display = 'block';
+}
+
+function saveLocal() {
+  const data = {
+    team: teamData,
+    gifs: gifData,
+    project: {
+      title:    document.getElementById('projTitle').value,
+      subtitle: document.getElementById('projSubtitle').value,
+      desc:     document.getElementById('projDesc').value,
+      github:   document.getElementById('projGithub').value,
+      year:     document.getElementById('projYear').value
+    }
+  };
+  localStorage.setItem('stylegif_data', JSON.stringify(data));
+  showToast('Saved to localStorage');
+}
+
+function loadSaved() {
+  const raw = localStorage.getItem('stylegif_data');
+  if (!raw) { showToast('No saved data found'); return; }
+  const data = JSON.parse(raw);
+  teamData = data.team || DEFAULT_TEAM;
+  gifData  = data.gifs || DEFAULT_GIFS;
+  if (data.project) {
+    document.getElementById('projTitle').value    = data.project.title||'';
+    document.getElementById('projSubtitle').value = data.project.subtitle||'';
+    document.getElementById('projDesc').value     = data.project.desc||'';
+    document.getElementById('projGithub').value   = data.project.github||'';
+    document.getElementById('projYear').value     = data.project.year||'';
+  }
+  buildTeamCards();
+  buildGifCards();
+  showToast('Loaded saved data');
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+// INIT
+buildTeamCards();
+buildGifCards();
+</script>
+</body>
+</html>
