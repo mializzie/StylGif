@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StylGif — My GIFs</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f0e8;
+    --accent: #ff3c00;
+    --accent2: #00d4ff;
+    --panel: #111111;
+    --border: #222222;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+  }
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image: linear-gradient(#161616 1px, transparent 1px), linear-gradient(90deg, #161616 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events:none; z-index:0;
+  }
+
+  /* NAV */
+  nav {
+    position:relative; z-index:10;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 28px;
+    background:rgba(10,10,10,0.92);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border);
+  }
+  .logo { font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; text-decoration:none; color:var(--white); }
+  .logo span { color:var(--accent); }
+  .nav-links { display:flex; gap:8px; }
+  .nav-links a {
+    font-size:0.72rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--white); text-decoration:none; padding:7px 14px;
+    border:1.5px solid #333; border-radius:3px; transition:all 0.2s;
+  }
+  .nav-links a:hover { border-color:var(--accent); background:var(--accent); color:var(--black); }
+  .nav-links a.active { border-color:var(--accent2); background:rgba(0,212,255,0.1); color:var(--accent2); }
+
+  /* PAGE */
+  .page-wrap {
+    position:relative; z-index:1;
+    max-width:1100px;
+    margin:0 auto;
+    padding:48px 28px 80px;
+  }
+
+  .page-header {
+    display:flex; align-items:flex-end; justify-content:space-between;
+    margin-bottom:40px; padding-bottom:24px;
+    border-bottom:1px solid var(--border);
+    flex-wrap:wrap; gap:16px;
+  }
+  .page-title-group {}
+  .page-tag {
+    font-size:0.62rem; letter-spacing:0.15em; text-transform:uppercase;
+    color:var(--accent2); margin-bottom:10px; display:block;
+  }
+  .page-title {
+    font-family:'Syne',sans-serif;
+    font-size:clamp(2rem,5vw,3rem);
+    font-weight:800; line-height:1; letter-spacing:-0.03em;
+  }
+  .page-title span { color:var(--accent); }
+  .page-count {
+    font-size:0.68rem; color:#555; margin-top:8px; letter-spacing:0.06em;
+  }
+
+  .header-actions { display:flex; gap:10px; align-items:center; }
+  .btn {
+    font-family:'Space Mono',monospace;
+    font-size:0.7rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+    padding:10px 20px; border-radius:3px; cursor:pointer; border:none; transition:all 0.15s;
+    text-decoration:none; display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn-primary { background:var(--accent); color:var(--black); }
+  .btn-primary:hover { opacity:0.85; transform:translateY(-1px); }
+  .btn-ghost { background:#1a1a1a; color:#888; border:1.5px solid #2a2a2a; }
+  .btn-ghost:hover { border-color:#555; color:var(--white); }
+  .btn-danger { background:transparent; color:#c44; border:1.5px solid #422; font-size:0.62rem; padding:7px 14px; }
+  .btn-danger:hover { border-color:#c44; color:#ff6666; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:100px 40px; text-align:center; gap:20px;
+  }
+  .empty-icon { font-size:4rem; opacity:0.3; }
+  .empty-title { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; color:#333; }
+  .empty-desc { font-size:0.78rem; color:#444; line-height:1.7; max-width:360px; }
+
+  /* GIF GRID */
+  .gif-grid {
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap:20px;
+  }
+
+  .gif-card {
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    overflow:hidden;
+    transition:border-color 0.2s, transform 0.2s;
+    cursor:pointer;
+    position:relative;
+  }
+  .gif-card:hover { border-color:var(--accent2); transform:translateY(-3px); }
+
+  .gif-preview {
+    width:100%; aspect-ratio:1;
+    display:flex; align-items:center; justify-content:center;
+    background:#0d0d0d;
+    overflow:hidden;
+    position:relative;
+  }
+  .gif-preview img {
+    width:100%; height:100%;
+    object-fit:contain;
+    image-rendering:pixelated;
+  }
+
+  .gif-info {
+    padding:14px 16px;
+    border-top:1px solid var(--border);
+  }
+  .gif-name {
+    font-size:0.78rem; font-weight:700; margin-bottom:6px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .gif-meta {
+    font-size:0.6rem; color:#555; letter-spacing:0.06em;
+    display:flex; gap:12px; flex-wrap:wrap;
+  }
+  .gif-meta span { color:#666; }
+
+  .gif-actions {
+    padding:10px 16px;
+    border-top:1px solid #1a1a1a;
+    display:flex; gap:8px; align-items:center;
+  }
+
+  /* LIGHTBOX */
+  .lightbox {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.95);
+    z-index:2000;
+    align-items:center; justify-content:center;
+    flex-direction:column; gap:24px;
+    padding:40px;
+  }
+  .lightbox.show { display:flex; }
+  .lightbox img {
+    max-width:min(480px,90vw); max-height:60vh;
+    image-rendering:pixelated;
+    border:2px solid var(--accent2);
+    border-radius:6px;
+  }
+  .lightbox-title {
+    font-family:'Syne',sans-serif; font-size:1.2rem; font-weight:800;
+  }
+  .lightbox-meta { font-size:0.68rem; color:#555; letter-spacing:0.06em; }
+  .lightbox-btns { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+  .lightbox-close {
+    position:absolute; top:20px; right:24px;
+    background:none; border:none; color:#555; font-size:1.4rem; cursor:pointer;
+    transition:color 0.2s;
+  }
+  .lightbox-close:hover { color:var(--white); }
+
+  /* TOAST */
+  .toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+    background:#1a1a1a; border:1px solid var(--accent2); color:var(--accent2);
+    font-size:0.72rem; letter-spacing:0.06em; padding:10px 24px;
+    border-radius:4px; z-index:9999; transition:transform 0.3s;
+    white-space:nowrap;
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  /* CONFIRM DIALOG */
+  .confirm-dialog {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.85); z-index:3000;
+    align-items:center; justify-content:center;
+  }
+  .confirm-dialog.show { display:flex; }
+  .confirm-box {
+    background:#111; border:1px solid #333; border-radius:8px;
+    padding:32px; max-width:360px; width:90%;
+    display:flex; flex-direction:column; gap:20px; text-align:center;
+  }
+  .confirm-box h3 { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:800; }
+  .confirm-box p { font-size:0.75rem; color:#666; line-height:1.6; }
+  .confirm-btns { display:flex; gap:10px; justify-content:center; }
+
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:2px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index-6.html" class="logo">Styl<span>Gif</span></a>
+  <div class="nav-links">
+    <a href="index-6.html">Home</a>
+    <a href="drawing.html">Drawing</a>
+    <a href="gifs.html" class="active">GIFs</a>
+    <a href="data.html">Data</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div class="page-title-group">
+      <span class="page-tag">// Your Gallery</span>
+      <div class="page-title">My <span>GIFs</span></div>
+      <div class="page-count" id="pageCount">Loading...</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" onclick="clearAll()">🗑 Clear All</button>
+      <a href="drawing.html" class="btn btn-primary">✏️ Draw New</a>
+    </div>
+  </div>
+
+  <div id="emptyState" class="empty-state" style="display:none;">
+    <div class="empty-icon">🎞️</div>
+    <div class="empty-title">No GIFs yet</div>
+    <div class="empty-desc">Draw something in the Drawing Studio, hit Save, and your GIF will appear here automatically.</div>
+    <a href="drawing.html" class="btn btn-primary" style="margin-top:8px;">▶ Start Drawing</a>
+  </div>
+
+  <div class="gif-grid" id="gifGrid"></div>
+
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <div class="lightbox-title" id="lbTitle"></div>
+  <img id="lbImg" src="" alt="">
+  <div class="lightbox-meta" id="lbMeta"></div>
+  <div class="lightbox-btns">
+    <a id="lbDownload" href="#" download="stylegif.gif" class="btn btn-primary">↓ Download GIF</a>
+    <button class="btn btn-ghost" onclick="closeLightbox()">✕ Close</button>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-dialog" id="confirmDialog">
+  <div class="confirm-box">
+    <h3>Clear All GIFs?</h3>
+    <p>This will permanently delete all your saved GIFs from this browser. This can't be undone.</p>
+    <div class="confirm-btns">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmClearAll()">Delete All</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+let gallery = [];
+
+function loadGallery() {
+  try {
+    gallery = JSON.parse(localStorage.getItem('stylegif_gallery') || '[]');
+  } catch(e) {
+    gallery = [];
+  }
+  renderGallery();
+}
+
+function saveGallery() {
+  localStorage.setItem('stylegif_gallery', JSON.stringify(gallery));
+}
+
+function renderGallery() {
+  const grid = document.getElementById('gifGrid');
+  const empty = document.getElementById('emptyState');
+  const count = document.getElementById('pageCount');
+
+  grid.innerHTML = '';
+
+  if (gallery.length === 0) {
+    empty.style.display = 'flex';
+    grid.style.display = 'none';
+    count.textContent = '0 GIFs saved';
+    return;
+  }
+
+  empty.style.display = 'none';
+  grid.style.display = 'grid';
+  count.textContent = gallery.length + ' GIF' + (gallery.length !== 1 ? 's' : '') + ' saved';
+
+  gallery.forEach((gif, i) => {
+    const card = document.createElement('div');
+    card.className = 'gif-card';
+
+    const date = new Date(gif.id).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    const time = new Date(gif.id).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+
+    card.innerHTML = `
+      <div class="gif-preview" onclick="openLightbox(${i})">
+        <img src="${gif.dataUrl}" alt="${gif.name}" loading="lazy">
+      </div>
+      <div class="gif-info">
+        <div class="gif-name" title="${gif.name}">${gif.name}</div>
+        <div class="gif-meta">
+          <span>${gif.frames || '?'} frames</span>
+          <span>${gif.fps || '?'} fps</span>
+          <span>${gif.size || 16}×${gif.size || 16}px</span>
+        </div>
+        <div class="gif-meta" style="margin-top:4px;color:#444">${date} at ${time}</div>
+      </div>
+      <div class="gif-actions">
+        <a href="${gif.dataUrl}" download="stylegif-${gif.id}.gif" class="btn btn-ghost" style="flex:1;justify-content:center;font-size:0.62rem;padding:7px 10px;">↓ Download</a>
+        <button class="btn btn-danger" onclick="deleteGif(${i}, event)">✕</button>
+      </div>
+    `;
+
+    grid.appendChild(card);
+  });
+}
+
+function openLightbox(i) {
+  const gif = gallery[i];
+  if (!gif) return;
+  document.getElementById('lbTitle').textContent = gif.name;
+  document.getElementById('lbImg').src = gif.dataUrl;
+  document.getElementById('lbDownload').href = gif.dataUrl;
+  document.getElementById('lbDownload').download = 'stylegif-' + gif.id + '.gif';
+  const date = new Date(gif.id).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  document.getElementById('lbMeta').textContent =
+    (gif.frames || '?') + ' frames · ' + (gif.fps || '?') + ' fps · ' +
+    (gif.size || 16) + '×' + (gif.size || 16) + 'px · Saved ' + date;
+  document.getElementById('lightbox').classList.add('show');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('show');
+}
+
+function deleteGif(i, e) {
+  e.stopPropagation();
+  gallery.splice(i, 1);
+  saveGallery();
+  renderGallery();
+  showToast('GIF deleted');
+}
+
+function clearAll() {
+  if (gallery.length === 0) { showToast('Nothing to clear'); return; }
+  document.getElementById('confirmDialog').classList.add('show');
+}
+
+function closeConfirm() {
+  document.getElementById('confirmDialog').classList.remove('show');
+}
+
+function confirmClearAll() {
+  gallery = [];
+  saveGallery();
+  renderGallery();
+  closeConfirm();
+  showToast('All GIFs cleared');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Close lightbox on backdrop click
+document.getElementById('lightbox').addEventListener('click', function(e) {
+  if (e.target === this) closeLightbox();
+});
+
+// Keyboard: Escape closes overlays
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeLightbox(); closeConfirm(); }
+});
+
+loadGallery();
+</script>
+</body>
+</html>
