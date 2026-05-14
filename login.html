@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StylGif — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f0e8;
+    --accent: #ff3c00;
+    --accent2: #00d4ff;
+    --panel: #111111;
+    --border: #222222;
+    --error: #ff4466;
+    --success: #00ff88;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    cursor: crosshair;
+    overflow: hidden;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(#1a1a1a 1px, transparent 1px),
+      linear-gradient(90deg, #1a1a1a 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  /* SCANLINE OVERLAY */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 40px;
+    background: rgba(10,10,10,0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    text-decoration: none;
+    color: var(--white);
+  }
+  .logo span { color: var(--accent); }
+
+  .nav-back {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #555;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-back:hover { color: var(--white); }
+
+  /* MAIN LAYOUT */
+  .auth-wrap {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 80px;
+  }
+
+  /* LEFT — decorative pixel art */
+  .auth-art {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .pixel-art-display {
+    width: 200px;
+    height: 200px;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    gap: 3px;
+    padding: 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 0 80px rgba(255,60,0,0.08);
+  }
+  .px { border-radius: 1px; transition: background 0.4s; }
+
+  .art-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #333;
+  }
+
+  .art-tagline {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+    letter-spacing: -0.04em;
+    color: #1e1e1e;
+  }
+  .art-tagline .a { color: var(--accent); }
+  .art-tagline .b { color: var(--accent2); }
+
+  /* RIGHT — FORM PANEL */
+  .auth-panel {
+    width: 100%;
+    max-width: 420px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+  }
+
+  /* TAB SWITCHER */
+  .auth-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--border);
+  }
+  .auth-tab {
+    padding: 18px;
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: #444;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-family: 'Space Mono', monospace;
+    transition: all 0.2s;
+    position: relative;
+    top: 1px;
+  }
+  .auth-tab.active {
+    color: var(--white);
+    border-bottom-color: var(--accent);
+    background: rgba(255,60,0,0.04);
+  }
+  .auth-tab:hover:not(.active) { color: #888; }
+
+  /* FORM BODY */
+  .auth-body {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .form-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #555;
+  }
+
+  .form-input {
+    background: #0d0d0d;
+    border: 1.5px solid #2a2a2a;
+    border-radius: 4px;
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.82rem;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+  .form-input:focus {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.08);
+  }
+  .form-input.error-field {
+    border-color: var(--error);
+    box-shadow: 0 0 0 3px rgba(255,68,102,0.08);
+  }
+  .form-input::placeholder { color: #333; }
+
+  /* PASSWORD STRENGTH */
+  .strength-bar {
+    height: 3px;
+    background: #1e1e1e;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .strength-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 2px;
+    transition: width 0.3s, background 0.3s;
+  }
+  .strength-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #444;
+    margin-top: 4px;
+  }
+
+  /* ERROR / SUCCESS MESSAGES */
+  .form-msg {
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    padding: 10px 14px;
+    border-radius: 4px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.5;
+  }
+  .form-msg.show { display: flex; }
+  .form-msg.error {
+    background: rgba(255,68,102,0.08);
+    border: 1px solid rgba(255,68,102,0.2);
+    color: var(--error);
+  }
+  .form-msg.success {
+    background: rgba(0,255,136,0.06);
+    border: 1px solid rgba(0,255,136,0.15);
+    color: var(--success);
+  }
+
+  /* SUBMIT BUTTON */
+  .btn-submit {
+    background: var(--accent);
+    color: var(--black);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 4px 4px 0 rgba(255,60,0,0.25);
+    width: 100%;
+    margin-top: 4px;
+  }
+  .btn-submit:hover { opacity: 0.85; transform: translate(-1px,-1px); box-shadow: 5px 5px 0 rgba(255,60,0,0.3); }
+  .btn-submit:active { transform: translate(1px,1px); box-shadow: 2px 2px 0 rgba(255,60,0,0.2); }
+  .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* FORM HINT */
+  .form-hint {
+    font-size: 0.62rem;
+    color: #444;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .form-hint a {
+    color: var(--accent2);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .form-hint a:hover { text-decoration: underline; }
+
+  /* LOADING SPINNER */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: var(--black);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+  }
+
+  /* LOGGED-IN STATE */
+  .account-view {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    gap: 24px;
+    text-align: center;
+  }
+  .account-view.show { display: flex; }
+
+  .account-avatar {
+    width: 80px; height: 80px;
+    background: var(--accent);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--black);
+    flex-shrink: 0;
+  }
+
+  .account-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  .account-meta {
+    font-size: 0.68rem;
+    color: #555;
+    letter-spacing: 0.08em;
+  }
+  .account-meta span { color: var(--accent2); }
+
+  .account-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 12px 24px;
+    border: 1.5px solid #333;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-outline:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .btn-danger-outline {
+    background: transparent;
+    color: #555;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 12px 24px;
+    border: 1.5px solid #2a2a2a;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-danger-outline:hover { border-color: var(--error); color: var(--error); }
+
+  /* USERS DEBUG STRIP (only shown in dev) */
+  .dev-strip {
+    display: none; /* hidden by default */
+  }
+
+  /* BLINK */
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .blink { animation: blink 1.8s step-end infinite; }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    .auth-art { display: none; }
+    .auth-wrap { padding: 40px 16px; }
+    nav { padding: 14px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">Styl<span>Gif</span></a>
+  <a href="index.html" class="nav-back">← Back to Home</a>
+</nav>
+
+<div class="auth-wrap">
+
+  <!-- DECORATIVE PIXEL ART -->
+  <div class="auth-art">
+    <div class="pixel-art-display" id="pixelArt"></div>
+    <p class="art-label blink">// Pixel Art Engine Active</p>
+    <div class="art-tagline">
+      Draw.<br>
+      <span class="a">Animate.</span><br>
+      <span class="b">Export.</span>
+    </div>
+  </div>
+
+  <!-- AUTH PANEL -->
+  <div class="auth-panel" id="authPanel">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab" id="tabRegister" onclick="switchTab('register')">Create Account</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div class="auth-body" id="loginForm">
+      <div class="form-msg error" id="loginError"></div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" id="loginUsername" type="text" placeholder="your_username" autocomplete="username" spellcheck="false">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn-submit" id="loginBtn" onclick="handleLogin()">▶ Sign In</button>
+      <p class="form-hint">No account? <a onclick="switchTab('register')">Create one — it's free.</a></p>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div class="auth-body" id="registerForm" style="display:none;">
+      <div class="form-msg error" id="registerError"></div>
+      <div class="form-msg success" id="registerSuccess"></div>
+      <div class="form-group">
+        <label class="form-label">Choose a Username</label>
+        <input class="form-input" id="regUsername" type="text" placeholder="pixel_wizard" autocomplete="username" spellcheck="false" oninput="checkUsername()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="regPassword" type="password" placeholder="••••••••" autocomplete="new-password" oninput="checkStrength()">
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+        <span class="strength-label" id="strengthLabel">Enter a password</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input class="form-input" id="regConfirm" type="password" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <button class="btn-submit" id="registerBtn" onclick="handleRegister()">✦ Create Account</button>
+      <p class="form-hint">Already have one? <a onclick="switchTab('login')">Sign in instead.</a></p>
+    </div>
+  </div>
+
+  <!-- LOGGED-IN VIEW (replaces auth panel) -->
+  <div class="account-view" id="accountView">
+    <div class="account-avatar" id="avatarInitial">?</div>
+    <div>
+      <div class="account-meta" style="margin-bottom:8px;">// Signed in as</div>
+      <div class="account-name" id="accountUsername">–</div>
+      <div class="account-meta" style="margin-top:8px;"><span id="gifCount">0</span> GIFs saved to your account</div>
+    </div>
+    <div class="account-actions">
+      <a href="drawing.html" class="btn-outline">✏️ Draw</a>
+      <a href="gifs.html" class="btn-outline" style="border-color:#333;">🎞️ My GIFs</a>
+      <button class="btn-danger-outline" onclick="handleLogout()">Sign Out</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  AUTH STORAGE  (localStorage, all client-side)
+//  Users: { username (lowercase key) → { username, passwordHash, createdAt } }
+//  Sessions: { currentUser: username | null }
+//  GIFs per user: key  stylegif_gifs_{username}  → array
+// ═══════════════════════════════════════════════════
+
+function getUsers() {
+  try { return JSON.parse(localStorage.getItem('stylegif_users') || '{}'); }
+  catch { return {}; }
+}
+function saveUsers(users) {
+  localStorage.setItem('stylegif_users', JSON.stringify(users));
+}
+function getCurrentUser() {
+  return localStorage.getItem('stylegif_session') || null;
+}
+function setCurrentUser(username) {
+  if (username) localStorage.setItem('stylegif_session', username);
+  else localStorage.removeItem('stylegif_session');
+}
+
+// Very simple hash (not cryptographic — fine for a browser-only app)
+async function hashPass(password) {
+  const enc = new TextEncoder().encode(password + 'stylegif_salt_2025');
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// Sanitise username: lowercase, alphanumeric + _ only, 3–20 chars
+function sanitiseUsername(raw) {
+  return raw.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+}
+
+// ─── TAB SWITCHER ────────────────────────────────────────────────────────
+function switchTab(tab) {
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+  const tabLogin = document.getElementById('tabLogin');
+  const tabRegister = document.getElementById('tabRegister');
+
+  if (tab === 'login') {
+    loginForm.style.display = 'flex';
+    registerForm.style.display = 'none';
+    tabLogin.classList.add('active');
+    tabRegister.classList.remove('active');
+    clearErrors();
+  } else {
+    loginForm.style.display = 'none';
+    registerForm.style.display = 'flex';
+    tabLogin.classList.remove('active');
+    tabRegister.classList.add('active');
+    clearErrors();
+  }
+}
+
+function clearErrors() {
+  ['loginError','registerError','registerSuccess'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '';
+    el.classList.remove('show');
+  });
+  ['loginUsername','loginPassword','regUsername','regPassword','regConfirm'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('error-field');
+  });
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = '⚠ ' + msg;
+  el.classList.add('show');
+}
+function showSuccess(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = '✓ ' + msg;
+  el.classList.add('show');
+}
+
+// ─── USERNAME AVAILABILITY CHECK ─────────────────────────────────────────
+function checkUsername() {
+  const raw = document.getElementById('regUsername').value;
+  const username = sanitiseUsername(raw);
+  const el = document.getElementById('regUsername');
+  const errEl = document.getElementById('registerError');
+
+  if (username.length === 0) return;
+
+  // Mirror cleaned value
+  if (raw !== username) document.getElementById('regUsername').value = username;
+
+  const users = getUsers();
+  if (users[username]) {
+    el.classList.add('error-field');
+    showError('registerError', 'That username is already taken.');
+  } else {
+    el.classList.remove('error-field');
+    errEl.classList.remove('show');
+  }
+}
+
+// ─── PASSWORD STRENGTH ───────────────────────────────────────────────────
+function checkStrength() {
+  const pw = document.getElementById('regPassword').value;
+  const fill = document.getElementById('strengthFill');
+  const label = document.getElementById('strengthLabel');
+
+  let score = 0;
+  if (pw.length >= 6) score++;
+  if (pw.length >= 10) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+  const levels = [
+    { pct: 0,   color: '#1e1e1e', text: 'Enter a password' },
+    { pct: 20,  color: '#ff4466', text: 'Weak' },
+    { pct: 40,  color: '#ff8800', text: 'Fair' },
+    { pct: 65,  color: '#ffcc00', text: 'Good' },
+    { pct: 85,  color: '#00d4ff', text: 'Strong' },
+    { pct: 100, color: '#00ff88', text: 'Excellent' },
+  ];
+
+  const lvl = levels[Math.min(score, 5)];
+  fill.style.width = lvl.pct + '%';
+  fill.style.background = lvl.color;
+  label.textContent = lvl.text;
+  label.style.color = lvl.pct > 0 ? lvl.color : '#444';
+}
+
+// ─── LOGIN ───────────────────────────────────────────────────────────────
+async function handleLogin() {
+  clearErrors();
+  const rawUsername = document.getElementById('loginUsername').value.trim();
+  const password    = document.getElementById('loginPassword').value;
+  const username    = sanitiseUsername(rawUsername);
+  const btn         = document.getElementById('loginBtn');
+
+  if (!username) {
+    document.getElementById('loginUsername').classList.add('error-field');
+    return showError('loginError', 'Please enter your username.');
+  }
+  if (!password) {
+    document.getElementById('loginPassword').classList.add('error-field');
+    return showError('loginError', 'Please enter your password.');
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  const users = getUsers();
+  if (!users[username]) {
+    btn.disabled = false; btn.textContent = '▶ Sign In';
+    document.getElementById('loginUsername').classList.add('error-field');
+    return showError('loginError', 'No account found with that username.');
+  }
+
+  const hash = await hashPass(password);
+  if (users[username].passwordHash !== hash) {
+    btn.disabled = false; btn.textContent = '▶ Sign In';
+    document.getElementById('loginPassword').classList.add('error-field');
+    return showError('loginError', 'Incorrect password. Try again.');
+  }
+
+  setCurrentUser(username);
+  btn.textContent = '✓ Signed In';
+
+  // Small delay then show account view
+  setTimeout(() => showAccountView(username), 400);
+}
+
+// ─── REGISTER ────────────────────────────────────────────────────────────
+async function handleRegister() {
+  clearErrors();
+  const rawUsername = document.getElementById('regUsername').value.trim();
+  const password    = document.getElementById('regPassword').value;
+  const confirm     = document.getElementById('regConfirm').value;
+  const username    = sanitiseUsername(rawUsername);
+  const btn         = document.getElementById('registerBtn');
+
+  if (username.length < 3) {
+    document.getElementById('regUsername').classList.add('error-field');
+    return showError('registerError', 'Username must be at least 3 characters (a–z, 0–9, _).');
+  }
+  if (username.length > 20) {
+    document.getElementById('regUsername').classList.add('error-field');
+    return showError('registerError', 'Username can\'t be longer than 20 characters.');
+  }
+  if (!password || password.length < 6) {
+    document.getElementById('regPassword').classList.add('error-field');
+    return showError('registerError', 'Password must be at least 6 characters.');
+  }
+  if (password !== confirm) {
+    document.getElementById('regConfirm').classList.add('error-field');
+    return showError('registerError', 'Passwords don\'t match.');
+  }
+
+  const users = getUsers();
+  if (users[username]) {
+    document.getElementById('regUsername').classList.add('error-field');
+    return showError('registerError', 'That username is already taken — pick another.');
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  const hash = await hashPass(password);
+  users[username] = {
+    username,
+    passwordHash: hash,
+    createdAt: Date.now()
+  };
+  saveUsers(users);
+  setCurrentUser(username);
+
+  // Initialise empty GIF gallery for new user
+  const gifKey = 'stylegif_gifs_' + username;
+  if (!localStorage.getItem(gifKey)) {
+    localStorage.setItem(gifKey, '[]');
+  }
+
+  showSuccess('registerSuccess', 'Account created! Welcome, ' + username + '!');
+  setTimeout(() => showAccountView(username), 700);
+}
+
+// ─── LOGOUT ──────────────────────────────────────────────────────────────
+function handleLogout() {
+  setCurrentUser(null);
+  document.getElementById('accountView').classList.remove('show');
+  document.getElementById('authPanel').style.display = 'block';
+  switchTab('login');
+  // Clear form fields
+  ['loginUsername','loginPassword','regUsername','regPassword','regConfirm'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  checkStrength();
+}
+
+// ─── ACCOUNT VIEW ────────────────────────────────────────────────────────
+function showAccountView(username) {
+  document.getElementById('authPanel').style.display = 'none';
+  const av = document.getElementById('accountView');
+  av.classList.add('show');
+  document.getElementById('accountUsername').textContent = username;
+  document.getElementById('avatarInitial').textContent = username.charAt(0).toUpperCase();
+
+  // Count GIFs
+  try {
+    const gifs = JSON.parse(localStorage.getItem('stylegif_gifs_' + username) || '[]');
+    document.getElementById('gifCount').textContent = gifs.length;
+  } catch { document.getElementById('gifCount').textContent = '0'; }
+}
+
+// ─── INIT: check if already logged in ───────────────────────────────────
+(function init() {
+  const user = getCurrentUser();
+  if (user) {
+    const users = getUsers();
+    if (users[user]) {
+      showAccountView(user);
+      return;
+    } else {
+      // Stale session
+      setCurrentUser(null);
+    }
+  }
+  // Show login form by default
+  document.getElementById('authPanel').style.display = 'block';
+})();
+
+// ─── KEYBOARD: Enter submits ─────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+  if (loginForm.style.display !== 'none' && !document.getElementById('accountView').classList.contains('show')) {
+    handleLogin();
+  } else if (registerForm.style.display !== 'none') {
+    handleRegister();
+  }
+});
+
+// ─── PIXEL ART ANIMATION ────────────────────────────────────────────────
+const art = document.getElementById('pixelArt');
+const COLS = ['#ff3c00','#ff6600','#00d4ff','#ffcc00','#ff3366','#1e1e1e','#0f0f0f','#0a0a0a'];
+const cells = [];
+for (let i = 0; i < 100; i++) {
+  const d = document.createElement('div');
+  d.className = 'px';
+  d.style.background = '#0f0f0f';
+  art.appendChild(d);
+  cells.push(d);
+}
+function animateArt() {
+  const t = Date.now() / 100;
+  cells.forEach((c, i) => {
+    const x = i % 10, y = Math.floor(i / 10);
+    const v = Math.sin(x * 0.7 + t * 0.07) * Math.cos(y * 0.6 + t * 0.05);
+    if (v > 0.6) c.style.background = COLS[Math.floor((x + y + t * 0.5) % 5)];
+    else if (v > 0.1) c.style.background = '#1a1a1a';
+    else c.style.background = '#0a0a0a';
+  });
+  requestAnimationFrame(animateArt);
+}
+animateArt();
+</script>
+</body>
+</html>
